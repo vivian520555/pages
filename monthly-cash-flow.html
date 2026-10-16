@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <!-- 要換：頁面標題、分享時顯示的描述 -->
 <title>每月現金流整理表｜佳佳</title>
-<meta name="description" content="把收入、支出和還款寫清楚，找出這個月可以先調整的一件事。">
+<meta name="description" content="手機直接填寫收入、支出和還款，自動計算本月結餘。">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── 版型：沿用 2026-08-06-chatgpt-setup／2026-10-01-7-habits 的米色＋金橘 ── */
@@ -215,6 +215,40 @@ details.ch[open] .ch-mk::after{transform:rotate(90deg);opacity:0;}
   .footer{padding:20px 20px 36px;}
 }
 </style>
+
+<style id="cash-flow-table-styles">
+/* Added styles for the fillable table; original template CSS is preserved. */
+#s-prompt .cf-form{min-width:0;max-width:100%;}
+#s-prompt .cf-help{font-size:13px;line-height:1.7;color:var(--dim);margin:8px 0 12px;overflow-wrap:anywhere;}
+#s-prompt .cf-month{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:18px 0 10px;font-weight:700;}
+#s-prompt .cf-month input{min-width:0;max-width:100%;padding:10px 12px;border:1px solid var(--gold-dim);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:16px;}
+#s-prompt .cf-group{margin:22px 0;min-width:0;}
+#s-prompt .cf-group h3{font-family:var(--serif);font-size:18px;color:var(--ink);margin-bottom:10px;}
+#s-prompt .cf-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);font-size:14px;}
+#s-prompt .cf-table caption{text-align:left;color:var(--dim);font-size:12px;margin-bottom:6px;}
+#s-prompt .cf-table th,#s-prompt .cf-table td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere;}
+#s-prompt .cf-table th{width:49%;text-align:left;font-weight:700;white-space:normal;}
+#s-prompt .cf-table td{width:51%;text-align:right;}
+#s-prompt .cf-table thead th{background:rgba(var(--a-rgb),0.10);color:var(--gold);}
+#s-prompt .cf-table input{box-sizing:border-box;display:block;width:100%;min-width:0;max-width:100%;padding:10px 8px;border:1px solid var(--gold-dim);border-radius:8px;background:var(--bg2);color:var(--ink);font-family:var(--sans);font-size:16px;text-align:right;}
+#s-prompt .cf-table input:focus,#s-prompt .cf-month input:focus{outline:2px solid var(--gold);outline-offset:2px;}
+#s-prompt .cf-table input[aria-invalid="true"]{border-color:#a12b25;}
+#s-prompt .cf-table tfoot th,#s-prompt .cf-table tfoot td{border-bottom:0;background:rgba(var(--a-rgb),0.08);font-weight:700;}
+#s-prompt output{font-family:var(--sans);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+#s-prompt .cf-summary{border:1px solid var(--gold-dim);border-radius:14px;background:var(--card);padding:8px 16px;margin-top:24px;min-width:0;}
+#s-prompt .cf-summary>div{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;padding:13px 0;border-bottom:1px dashed var(--line);}
+#s-prompt .cf-summary output{font-size:20px;font-weight:800;max-width:100%;}
+#s-prompt .cf-detail{display:block;font-size:12px;color:var(--dim);}
+#s-prompt .cf-summary .cf-balance{color:var(--gold);font-weight:800;}
+#s-prompt .cf-summary .cf-balance[data-negative="true"]{color:#a12b25;}
+#s-prompt #cf-summary-note{font-size:13px;line-height:1.7;color:var(--dim);padding:12px 0;}
+#s-prompt .cf-actions{display:flex;justify-content:flex-end;margin-top:14px;}
+#s-prompt #cf-reset{border:1px solid var(--gold-dim);border-radius:50px;background:var(--card);color:var(--ink);padding:10px 18px;font:inherit;font-size:14px;cursor:pointer;}
+#s-prompt .cf-error{color:#a12b25;font-size:13px;line-height:1.7;margin:12px 0;}
+#s-prompt [hidden]{display:none!important;}
+@media(max-width:380px){#s-prompt .cf-table th,#s-prompt .cf-table td{padding:9px 8px;}#s-prompt .cf-summary{padding:6px 12px;}}
+</style>
+
 </head>
 <body>
 <script>document.documentElement.className+=' js';</script>
@@ -256,7 +290,7 @@ details.ch[open] .ch-mk::after{transform:rotate(90deg);opacity:0;}
       <div class="tt">這頁有</div>
       <ul>
         <li><a href="#s-hooks">看懂收支<i>↓</i></a></li>
-        <li><a href="#s-prompt">複製整理表<i>↓</i></a></li>
+        <li><a href="#s-prompt">填寫收支表<i>↓</i></a></li>
         <li><a href="#s-check">找出下一步<i>↓</i></a></li>
       </ul>
     </nav>
@@ -275,45 +309,60 @@ details.ch[open] .ch-mk::after{transform:rotate(90deg);opacity:0;}
   </section>
 
   <section class="sec fade" id="s-prompt">
-    <span class="sec-tag">複製整理表</span>
-    <h2>複製這份表<br><span class="g">把自己的數字填進去</span></h2>
-    <div class="cp"><div class="pl">我的每月現金流整理表</div><button class="copy-btn" type="button">複製</button><pre>我的每月現金流整理表
-月份：【填入月份】
-
-一、本月實際收入
-薪水：【填入金額】
-副業收入：【填入金額】
-其他收入：【填入金額】
-本月總收入：【填入金額】
-
-二、本月支出，不含下方還款
-房租：【填入金額】
-飲食：【填入金額】
-交通：【填入金額】
-水電、電信等帳單：【填入金額】
-保險：【填入金額】
-購物、娛樂、訂閱：【填入金額】
-其他支出：【填入項目與金額】
-支出小計：【填入金額】
-
-三、本月還款
-房貸：【填入金額】
-信貸：【填入金額】
-分期及其他還款：【填入金額】
-還款小計：【填入金額】
-
-四、本月結餘
-本月總支出＝支出小計＋還款小計
-本月結餘＝本月總收入－本月總支出
-
-本月結餘：【填入金額】
-
-填寫提醒：
-沒有的項目填 0，同一筆費用只記一次。
-這份表以本月實際收到、付出的錢為準。
-信用卡以本月實際繳款金額，依帳單內容分類記錄；尚未繳付的消費，等實際付款的月份再記。
-信用卡分期若已放進還款欄，就不要再記進其他支出。
-自己帳戶之間的轉帳，不算新增收入或支出。</pre></div>
+    <span class="sec-tag">填寫收支表</span>
+    <h2>把自己的數字填進去<br><span class="g">自動算出本月結餘</span></h2>
+    <p>填入本月實際收到、付出的金額，就能看到收入、總支出和結餘。沒有的項目可以留白。</p>
+    <form id="cash-flow-form" class="cf-form" novalidate>
+      <div class="cf-month"><label for="cf-month">記錄月份</label><input id="cf-month" name="month" type="month"></div>
+      <p class="cf-help" id="cf-number-help">單位：新臺幣元。請填 0 或正數，最多兩位小數；金額可包含逗號。</p>
+      <div class="cf-group"><h3>本月收入</h3>
+      
+      <table class="cf-table"><caption>本月收入明細（單位：新臺幣元）</caption>
+      <thead><tr><th scope="col">項目</th><th scope="col">金額（元）</th></tr></thead>
+      <tbody><tr><th scope="row"><label for="cf-income-0">薪水</label></th>
+        <td><input id="cf-income-0" name="cf-income-0" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="income" data-cf-label="薪水" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-income-1">副業收入</label></th>
+        <td><input id="cf-income-1" name="cf-income-1" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="income" data-cf-label="副業收入" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-income-2">其他收入</label></th>
+        <td><input id="cf-income-2" name="cf-income-2" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="income" data-cf-label="其他收入" aria-describedby="cf-number-help cf-error"></td></tr></tbody>
+      <tfoot><tr><th scope="row">小計</th><td><output id="cf-income-total">NT$0</output></td></tr></tfoot>
+      </table></div>
+<div class="cf-group"><h3>本月支出</h3>
+      <p class="cf-help">這裡不含下方的房貸、信貸與分期還款。</p>
+      <table class="cf-table"><caption>本月支出明細（單位：新臺幣元）</caption>
+      <thead><tr><th scope="col">項目</th><th scope="col">金額（元）</th></tr></thead>
+      <tbody><tr><th scope="row"><label for="cf-expenses-0">房租</label></th>
+        <td><input id="cf-expenses-0" name="cf-expenses-0" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="expenses" data-cf-label="房租" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-expenses-1">飲食</label></th>
+        <td><input id="cf-expenses-1" name="cf-expenses-1" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="expenses" data-cf-label="飲食" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-expenses-2">交通</label></th>
+        <td><input id="cf-expenses-2" name="cf-expenses-2" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="expenses" data-cf-label="交通" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-expenses-3">水電、電信等帳單</label></th>
+        <td><input id="cf-expenses-3" name="cf-expenses-3" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="expenses" data-cf-label="水電、電信等帳單" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-expenses-4">保險</label></th>
+        <td><input id="cf-expenses-4" name="cf-expenses-4" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="expenses" data-cf-label="保險" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-expenses-5">購物、娛樂、訂閱</label></th>
+        <td><input id="cf-expenses-5" name="cf-expenses-5" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="expenses" data-cf-label="購物、娛樂、訂閱" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-expenses-6">其他支出</label></th>
+        <td><input id="cf-expenses-6" name="cf-expenses-6" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="expenses" data-cf-label="其他支出" aria-describedby="cf-number-help cf-error"></td></tr></tbody>
+      <tfoot><tr><th scope="row">小計</th><td><output id="cf-expenses-total">NT$0</output></td></tr></tfoot>
+      </table></div>
+<div class="cf-group"><h3>本月還款</h3>
+      
+      <table class="cf-table"><caption>本月還款明細（單位：新臺幣元）</caption>
+      <thead><tr><th scope="col">項目</th><th scope="col">金額（元）</th></tr></thead>
+      <tbody><tr><th scope="row"><label for="cf-repayments-0">房貸</label></th>
+        <td><input id="cf-repayments-0" name="cf-repayments-0" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="repayments" data-cf-label="房貸" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-repayments-1">信貸</label></th>
+        <td><input id="cf-repayments-1" name="cf-repayments-1" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="repayments" data-cf-label="信貸" aria-describedby="cf-number-help cf-error"></td></tr><tr><th scope="row"><label for="cf-repayments-2">分期及其他還款</label></th>
+        <td><input id="cf-repayments-2" name="cf-repayments-2" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" maxlength="17" data-cf-group="repayments" data-cf-label="分期及其他還款" aria-describedby="cf-number-help cf-error"></td></tr></tbody>
+      <tfoot><tr><th scope="row">小計</th><td><output id="cf-repayments-total">NT$0</output></td></tr></tfoot>
+      </table></div>
+      <p class="cf-error" id="cf-error" role="alert" hidden></p>
+      <div class="cf-summary" aria-live="polite" aria-atomic="true">
+        <div><span>本月收入</span><output id="cf-summary-income">NT$0</output></div>
+        <div><span>本月總支出<span class="cf-detail">支出＋還款</span></span><output id="cf-summary-outgoing">NT$0</output></div>
+        <div class="cf-balance"><span>本月結餘</span><output id="cf-summary-balance">NT$0</output></div>
+        <p id="cf-summary-note">填入金額後，就會自動更新。</p>
+      </div>
+      <div class="cf-actions"><button type="button" id="cf-reset">清空表格</button></div>
+      <p class="cf-help">填寫的資料不會儲存或送出，只留在這個頁面；重新整理或關閉後會清空。想保留紀錄，請複製下方結果。</p>
+      <noscript><p class="cf-error">請使用已啟用 JavaScript 的瀏覽器，才能自動計算及複製結果。</p></noscript>
+    </form>
+    <div class="cp"><div class="pl">複製本月收支紀錄</div><button class="copy-btn" type="button">複製</button><pre id="cf-copy-result">我的每月現金流整理表
+請先填寫上方表格。</pre></div>
+    <div class="pos"><b>填寫提醒：</b>同一筆費用只記一次。信用卡以本月實際繳款金額，依帳單內容分類；尚未繳付的消費，等實際付款的月份再記。分期若已記入還款欄，就不要再放進其他支出。自己帳戶之間的轉帳，不算新增收入或支出。</div>
   </section>
 
   <section class="sec fade" id="s-check">
@@ -429,5 +478,82 @@ setTimeout(function(){ document.querySelectorAll('.fade').forEach(function(el){ 
 · 數字只放真的，沒有就刪掉那一塊
 ═══════════════════════════════════════════
 -->
+
+<script id="cash-flow-calculator">
+(function(){
+  'use strict';
+  // Pure calculations use integer cents to avoid rounding drift.
+  function parseMoney(raw){
+    var text=String(raw).trim().replace(/,/g,'');
+    if(text==='') return 0;
+    if(!/^\d+(?:\.\d{1,2})?$/.test(text)) return null;
+    var parts=text.split('.');
+    var cents=Number(parts[0])*100+Number(((parts[1]||'')+'00').slice(0,2));
+    return Number.isSafeInteger(cents)&&cents<=9999999999999?cents:null;
+  }
+  function calculateTotals(groups){
+    function sum(values){return values.reduce(function(total,value){return total+value;},0);}
+    var income=sum(groups.income),expenses=sum(groups.expenses),repayments=sum(groups.repayments);
+    return {income:income,expenses:expenses,repayments:repayments,outgoing:expenses+repayments,balance:income-expenses-repayments};
+  }
+  // UI bindings.
+  var form=document.getElementById('cash-flow-form');
+  if(!form) return;
+  var fields=Array.from(form.querySelectorAll('[data-cf-group]'));
+  var month=document.getElementById('cf-month');
+  var error=document.getElementById('cf-error');
+  var copyResult=document.getElementById('cf-copy-result');
+  var formatter=new Intl.NumberFormat('zh-TW',{maximumFractionDigits:2});
+  function amount(cents){return formatter.format(cents/100);}
+  function currency(cents){return 'NT$'+amount(cents);}
+  function write(id,value){document.getElementById(id).textContent=value;}
+  function setCurrentMonth(){var now=new Date();month.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');}
+  function update(){
+    var values={income:[],expenses:[],repayments:[]};
+    var errors=[];
+    fields.forEach(function(input){
+      var value=parseMoney(input.value);
+      input.setAttribute('aria-invalid',value===null?'true':'false');
+      if(value===null) errors.push(input.dataset.cfLabel);
+      else values[input.dataset.cfGroup].push(value);
+    });
+    if(errors.length){
+      error.hidden=false;
+      error.textContent='請檢查「'+errors.join('、')+'」：請填 0 或正數，最多兩位小數，金額須小於 1,000 億元。';
+      ['income','expenses','repayments'].forEach(function(key){write('cf-'+key+'-total','—');});
+      ['income','outgoing','balance'].forEach(function(key){write('cf-summary-'+key,'—');});
+      write('cf-summary-note','修正上方金額後，才會顯示完整結餘。');
+      document.querySelector('.cf-balance').removeAttribute('data-negative');
+      copyResult.textContent='尚有金額格式需要修正，請先完成上方表格。';
+      return;
+    }
+    error.hidden=true;
+    error.textContent='';
+    var totals=calculateTotals(values);
+    ['income','expenses','repayments'].forEach(function(key){write('cf-'+key+'-total',currency(totals[key]));});
+    ['income','outgoing','balance'].forEach(function(key){write('cf-summary-'+key,currency(totals[key]));});
+    document.querySelector('.cf-balance').setAttribute('data-negative',totals.balance<0?'true':'false');
+    var hasEntry=fields.some(function(input){return input.value.trim()!=='';});
+    var note=!hasEntry?'填入金額後，就會自動更新。':totals.balance<0?'本月支出比收入多 '+currency(-totals.balance)+'，先確認是否有漏記或重複。':totals.balance===0?'本月收支相等，接下來也要留意尚未支付的帳單。':'本月有結餘，運用前也要考慮接下來的帳單與生活需要。';
+    write('cf-summary-note',note);
+    var lines=['我的每月現金流整理表','月份：'+(month.value||'未填寫'),'單位：新臺幣元'];
+    var names={income:'本月收入',expenses:'本月支出（不含還款）',repayments:'本月還款'};
+    ['income','expenses','repayments'].forEach(function(key){
+      lines.push('',names[key]);
+      fields.filter(function(input){return input.dataset.cfGroup===key;}).forEach(function(input){lines.push(input.dataset.cfLabel+'：'+amount(parseMoney(input.value)));});
+      lines.push('小計：'+amount(totals[key]));
+    });
+    lines.push('','本月總收入：'+amount(totals.income),'本月總支出（支出＋還款）：'+amount(totals.outgoing),'本月結餘：'+amount(totals.balance));
+    copyResult.textContent=lines.join('\n');
+  }
+  form.addEventListener('submit',function(event){event.preventDefault();});
+  form.addEventListener('input',update);
+  form.addEventListener('change',update);
+  document.getElementById('cf-reset').addEventListener('click',function(){form.reset();setCurrentMonth();update();});
+  setCurrentMonth();
+  update();
+})();
+</script>
+
 </body>
 </html>
